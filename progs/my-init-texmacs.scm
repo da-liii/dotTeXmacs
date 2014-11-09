@@ -1,3 +1,4 @@
+
 ; basic functions and macros
 (define-macro (foreach i . b)
   `(for-each (lambda (,(car i))
@@ -276,7 +277,8 @@
                               result)))
   result)
 
-(define (struct-graph body)
+(tm-define (struct-graph body)
+  (:secure #t)
   (define result '())
   (define canvas_width 0)
   (define canvas_height 0)
@@ -301,7 +303,8 @@
   result)
 
 ; draw a rose
-(define (rose r nsteps)
+(tm-define (rose r nsteps)
+  (:secure #t)
   (define pi (acos -1))
   (define points '())
   (define lines '())
