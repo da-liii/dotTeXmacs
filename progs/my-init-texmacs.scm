@@ -39,12 +39,13 @@
   (car (reverse alist)))
 ; functions for table
 (define CELL_HCENTER '(cwith "1" "-1" "1" "1" "cell-halign" "c"))
+(define TABLE_HEAD_COLOR '(cwith "1" "1" "1" "1" "cell-background" "yellow"))
 
 (define (get-block body)
   (cons 'block (cons body '())))
 
 (define (do-get-tformat body)
-  (cons 'tformat (cons CELL_HCENTER (cons body '()))))
+  (list 'tformat CELL_HCENTER TABLE_HEAD_COLOR body))
 
 (define (get-row body)
   (cons 'row (cons body '())))
@@ -68,6 +69,24 @@
 
 (define (do-get-point x y)
   (cons 'point (cons (number->string x) (cons (number->string y) '()))))
+
+(define (do-get-x point)
+  (string->number (list-ref point 1)))
+
+(define (do-get-y point)
+  (string->number (list-ref point 2)))
+
+; in TeXmacs when you look into the source, > appears the same as <gtr>
+; but in the exported TeXmacs Scheme source file, they are different
+(define (do-get-line point1 point2)
+  (list 'with "arrow-end" "|<gtr>"
+        (list 'line 
+              point1
+              (do-get-point (/ (+ (do-get-x point1) (do-get-x point2)) 2.0)
+                            (do-get-y point1))
+              (do-get-point (/ (+ (do-get-x point1) (do-get-x point2)) 2.0)
+                            (do-get-y point2))
+              point2)))
 
 (define (do-get-text-at body position)
   (list 'with "text-at-valign" "center" "text-at-halign" "left"
@@ -101,7 +120,22 @@
 (define (tmlen->graph num)
   (/ num 60550.0))
 
-(define HGAP 100000)
+(define (tmlen->gh num)
+  (/ num 599040.0))
+
+(define (tmlen->gw num)
+  (/ num 998400.0))
+
+(define (tmlen->par num)
+  (/ num 998400.0))
+
+(define (get-par-from-tmlen num)
+  (string-append (number->string (tmlen->par num)) "par"))
+
+(define (ln->tmlen num)
+  (/ num 1066))
+
+(define HGAP 80000)
 (define VGAP 50000)
 
 (define (get-self-and-group-geometry name_body)
@@ -122,7 +156,7 @@
   (set! the_block (do-get-block table-content))
   ; calculate result
   (foreach (elem (cddr body))
-           (if (list? elem) (set! result (cons (get-self-geometry elem)
+           (if (list? elem) (set! result (cons (get-self-and-group-geometry elem)
                                                result))
                (null? '())))
   (set! result (reverse result))
@@ -199,6 +233,49 @@
          (do-get-point (tmlen->graph (car point)) (tmlen->graph (cadr point)))) 
         result))
 
+;sx = x, sy = y + (height/2)*(1 - 1/(length content))
+(define (do-get-struct-position body)
+  (define content (car body))
+  (define x (car (rac body)))
+  (define y (cadr (rac body)))
+  (define height (string->number (cadr (cadr body))))
+  (do-get-point (tmlen->graph x) 
+                (tmlen->graph (+ y (* (/ height 2.0)
+                              (- 1 (/ 1 (length content))))))))
+
+; sx = x + width
+; sy = y + height/2 - (height / (length content)) * ((list-ref)+ 1/2) 
+(define (list-rref elem alist)
+  (cond ((null? alist) '())
+        (else (cond ((eq? elem (car alist)) 0)
+                    (else (+ 1 (list-rref elem (cdr alist))))))))
+
+(define (do-get-member-position elem body)
+  (define content (car body))
+  (define x (car (rac body)))
+  (define y (cadr (rac body)))
+  (define height (string->number (cadr (cadr body))))
+  (define width (string->number (car (cadr body))))
+  (do-get-point (tmlen->graph (+ x width))
+                (tmlen->graph (- (+ y (/ height 2.0))
+                                 (* (/ height (length content)) 
+                                    (+ (list-rref elem content) (/ 1 2)))))))
+
+(define (do-get-lines body)
+  (define result '())
+  (define sub_body (cdr body))
+  (define name_body (car body))
+  (foreach (elem sub_body)
+           (set! result (append result
+                                (do-get-lines (cadr elem)))))
+  (foreach (elem sub_body)
+           (set! result (cons (do-get-line (do-get-member-position
+                                         (car elem) name_body) 
+                                        (do-get-struct-position 
+                                         (car (cadr elem)))) 
+                              result)))
+  result)
+
 (define (struct-graph body)
   (define result '())
   (define canvas_width 0)
@@ -210,11 +287,18 @@
   (set! canvas_height (extract-height body))
   (set! body (get-position body 0 0 canvas_height))
   (set! result (do-get-struct-tables body))
-  (display (do-get-graphics result))
-  (do-get-graphics result))
-
-;(inactive (extern "struct-graph" (tree "struct" "1" "2" "3")))
-;(with "gr-mode" "point" "gr-frame" (tuple "scale" "1cm" (tuple "0.5gw" "0.5gh")) "gr-geometry" (tuple "geometry" "0.788016par" "0.6par" "center") (graphics "" (point "-5.42658" "3.26161") (point "-5.44616" "2.04769") (point "-2.0002" "1.14704") (point "-1.68693" "2.51759")))
+  (set! result (append result (do-get-lines (cadr body))))
+  (set! result (list 'with 
+                     "gr-frame" 
+                     (list 'tuple "scale" "1cm" 
+                             (list 'tuple "0gw" "0.001gh"))
+                     "gr-geometry"
+                     (list 'tuple "geometry" 
+                           (get-par-from-tmlen canvas_width) 
+                           (get-par-from-tmlen canvas_height) "center")
+                     (do-get-graphics result)))
+  (display* result)
+  result)
 
 ; draw a rose
 (define (rose r nsteps)
@@ -233,4 +317,3 @@
            (foreach (p2 points)
                     (set! lines (cons `(line ,p1 ,p2) lines))))
   `(with  "gr-geometry"  ,(cons 'tuple '("geometry" "0.5par" "0.5par" "center")) ,(do-get-graphics (append lines points))))
-
