@@ -130,14 +130,22 @@
 (define (tmlen->par num)
   (/ num 998400.0))
 
-(define (get-par-from-tmlen num)
-  (string-append (number->string (tmlen->par num)) "par"))
+(define (tmlen->cm num)
+  (/ num 60472.4))
+
+(define (cm->tmlen num)
+  (* num 60472.4))
+
+(define (cm->string num)
+  (string-append (number->string num) "cm"))
 
 (define (ln->tmlen num)
   (/ num 1066))
 
 (define HGAP 80000)
 (define VGAP 50000)
+(define HPADDING 0.1)
+(define VPADDING 0.1)
 
 (define (get-self-and-group-geometry name_body)
   (define flag #t)
@@ -285,19 +293,21 @@
   (set! body (tree->stree body))
   (set! body (list 'tree "root" body))
   (set! body (get-self-and-group-geometry body))
-  (set! canvas_width (extract-width body))
+  (set! canvas_width (+ (extract-width body) (cm->tmlen (* 2 HPADDING))))
   (set! canvas_height (extract-height body))
   (set! body (get-position body 0 0 canvas_height))
+  (set! canvas_height (+ canvas_height (cm->tmlen (* 2 VPADDING))))
   (set! result (do-get-struct-tables body))
   (set! result (append result (do-get-lines (cadr body))))
   (set! result (list 'with 
                      "gr-frame" 
                      (list 'tuple "scale" "1cm" 
-                             (list 'tuple "0gw" "0.001gh"))
+                             (list 'tuple (cm->string HPADDING)
+                                   (cm->string VPADDING)))
                      "gr-geometry"
                      (list 'tuple "geometry" 
-                           (get-par-from-tmlen canvas_width) 
-                           (get-par-from-tmlen canvas_height) "center")
+                           (cm->string (tmlen->cm canvas_width)) 
+                           (cm->string (tmlen->cm canvas_height)) "center")
                      (do-get-graphics result)))
   (display* result)
   result)
