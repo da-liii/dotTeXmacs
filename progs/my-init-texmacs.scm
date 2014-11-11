@@ -1,4 +1,3 @@
-
 ; basic functions and macros
 (define-macro (foreach i . b)
   `(for-each (lambda (,(car i))
@@ -285,12 +284,11 @@
                               result)))
   result)
 
-(tm-define (struct-graph body)
+(tm-define (edit-struct-graph body)
   (:secure #t)
   (define result '())
   (define canvas_width 0)
   (define canvas_height 0)
-  (set! body (tree->stree body))
   (set! body (list 'tree "root" body))
   (set! body (get-self-and-group-geometry body))
   (set! canvas_width (+ (extract-width body) (cm->tmlen (* 2 HPADDING))))
@@ -309,8 +307,30 @@
                            (cm->string (tmlen->cm canvas_width)) 
                            (cm->string (tmlen->cm canvas_height)) "center")
                      (do-get-graphics result)))
-  (display* result)
   result)
+
+(tm-define (struct-graph body)
+  (:secure #t)
+  (set! body (tree->stree body))
+  (edit-struct-graph body))
+
+(define (get-list stree)
+  (define result '())
+  (cond ((list? stree) 
+         (foreach (elem stree)
+                  (set! result (cons (get-list elem) result)))
+         (set! result (cons 'list (reverse result))))
+        (else (set! result stree)))
+  result)
+
+(tm-define (edit)
+  (:secure #t)
+  (define code '())
+  (with-innermost t 'edit-struct-graph
+    (set! code (list (car (tree->stree t)) 
+                       (get-list (cadr (tree->stree t)))))
+    (tree-set! t (eval code))
+    ))
 
 ; draw a rose
 (tm-define (rose r nsteps)
