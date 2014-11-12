@@ -284,7 +284,7 @@
                               result)))
   result)
 
-(tm-define (edit-struct-graph body)
+(tm-define (do-struct-graph body)
   (:secure #t)
   (define result '())
   (define canvas_width 0)
@@ -297,7 +297,7 @@
   (set! canvas_height (+ canvas_height (cm->tmlen (* 2 VPADDING))))
   (set! result (do-get-struct-tables body))
   (set! result (append result (do-get-lines (cadr body))))
-  (set! result (list 'with 
+  (set! result (list 'with "gr-mode" "point"
                      "gr-frame" 
                      (list 'tuple "scale" "1cm" 
                              (list 'tuple (cm->string HPADDING)
@@ -312,7 +312,7 @@
 (tm-define (struct-graph body)
   (:secure #t)
   (set! body (tree->stree body))
-  (edit-struct-graph body))
+  (do-struct-graph body))
 
 (define (get-list stree)
   (define result '())
@@ -323,14 +323,18 @@
         (else (set! result stree)))
   result)
 
-(tm-define (edit)
+(tm-define (edit-struct-graph)
   (:secure #t)
   (define code '())
-  (with-innermost t 'edit-struct-graph
-    (set! code (list (car (tree->stree t)) 
-                       (get-list (cadr (tree->stree t)))))
-    (tree-set! t (eval code))
-    ))
+  (with t (focus-tree)
+            (set! code (list 'do-struct-graph
+                             (get-list (cadr (tree->stree t)))))
+            (tree-set! t (eval code)))
+  )
+
+(kbd-map
+    ("M-e" (edit-struct-graph))
+  )
 
 ; draw a rose
 (tm-define (rose r nsteps)
