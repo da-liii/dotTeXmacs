@@ -188,6 +188,7 @@
                          result)))
   (list name result))
 
+; get the position of the struct body
 (define (get-position body left bottom top)
   (define result '())
   (define new_left (+ left (extract-self-width body) HGAP))
@@ -195,6 +196,8 @@
   (define sub_body '())
   (define height-list '())
   (define tmp_v '())
+  ;; input:  (h1 h2 h3) base gap
+  ;; output: (base X+h1) (base+h1+gap X+h2) (base+h1+gap+h2+gap X+h3)
   (define (get-tmp-v alist base gap)
     (define result '())
     (set! alist (reverse alist))
@@ -205,14 +208,19 @@
                                       (rac (rac result))))
                                 result)))
     (reverse result))
+  
   (set! sub_body (cdr (cadr body)))
-  (set! height-list (map extract-self-height sub_body))
+  (set! height-list (map extract-height sub_body)) ;; edited
+  
+  ;; calculate the new vertical gap
   (if (< (length height-list) 2) (null? '())
-      (set! new_vgap (/ (- top (list-sum height-list)) (- (length sub_body) 1))))
+      (set! new_vgap (/ (- top (+ (list-sum height-list) bottom)) (- (length sub_body) 1))))
+
   (if (= (length height-list) 1) (set! tmp_v (list (list bottom top)))
       (null? '()))
   (if (< (length height-list) 2) (null? '())
       (set! tmp_v (get-tmp-v height-list bottom new_vgap)))
+  
   (if (null? height-list) (null? '())
       (foreach-number (i 0 < (length height-list))
                       (set! result 
@@ -241,7 +249,7 @@
          (do-get-point (tmlen->graph (car point)) (tmlen->graph (cadr point)))) 
         result))
 
-;sx = x, sy = y + (height/2)*(1 - 1/(length content))
+; sx = x, sy = y + (height/2)*(1 - 1/(length content))
 (define (do-get-struct-position body)
   (define content (car body))
   (define x (car (rac body)))
