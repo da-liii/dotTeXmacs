@@ -46,3 +46,14 @@
                                   (TeXmacs "1.99.2")
                                   (style (tuple "generic" "chinese"))
                                   (body ,(cons 'document h))))))
+
+
+(tmfs-format-handler (commit name)
+                     (if (string-contains name "|")
+                         (with u (tmfs-string->url (tmfs-cdr (string-replace name "|" "/")))
+                               (url-format u))
+                         (url-format (tmfs-string->url name))))
+
+(tmfs-load-handler (commit name)
+                   (git-show (string-replace name "|" ":./")))
+
