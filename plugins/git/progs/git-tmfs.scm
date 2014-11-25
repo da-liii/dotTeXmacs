@@ -34,7 +34,7 @@
                                                      ($with (date by msg commit) x
                                                             ($describe-item
                                                              ($inline "Commit " commit " by " by " on " date)
-                                                             msg))))))))
+                                                             (utf8->cork msg)))))))))
                          (else '())))
 
 (tm-define (git-history name)
@@ -61,7 +61,7 @@
                                               ($with (date by msg commit) x
                                                      ($describe-item
                                                       ($inline "Commit " commit " by " by " on " date)
-                                                      msg)))))))))
+                                                      (utf8->cork msg))))))))))
 
 (tmfs-format-handler (commit name)
                      (if (string-contains name "|")
@@ -81,8 +81,8 @@
                                               "parent 0"
                                               `(concat "parent " ,($link (string-append "tmfs://commit/" p) p)))
                                           (list 'new-line)
-                                          ($for (x m) `(concat ,x ,(list 'new-line)))
+                                          ($for (x m) `(concat ,(utf8->cork x) ,(list 'new-line)))
                                           "----"
                                           (list 'new-line)
-                                          ($for (x d) `(concat ,x ,(list 'new-line)))))))))
+                                          ($for (x d) `(concat ,(utf8->cork x) ,(list 'new-line)))))))))
 
