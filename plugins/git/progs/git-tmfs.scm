@@ -11,8 +11,8 @@
            (revert-buffer "tmfs://git/log"))
 
 (tmfs-title-handler (git name doc)
-                    (cond ((== name "status") "git status")
-                          ((== name "log") "git log")
+                    (cond ((== name "status") "Git Status")
+                          ((== name "log") "Git Log")
                           (else "unknown")))
 
 (tmfs-load-handler (git name)
@@ -23,30 +23,45 @@
                                   (style (tuple "generic" "chinese"))
                                   (body ,(cons 'document s)))))
                          ((== name "log")
-                          (with s (git-log)
-                                `(document
-                                  (TeXmacs "1.99.2")
-                                  (style (tuple "generic" "chinese"))
-                                  (body ,(cons 'document s)))))
+                          (with h (git-log)
+                                      ($generic
+                                       ($tmfs-title "Git Log")
+                                       ($when (not h)
+                                              "This directory is not under version control.")
+                                       ($when h
+                                              ($description-long
+                                               ($for (x h)
+                                                     ($with (date by msg commit) x
+                                                            ($describe-item
+                                                             ($inline "Commit " commit " by " by " on " date)
+                                                             msg))))))))
                          (else '())))
 
 (tm-define (git-history name)
            (cursor-history-add (cursor-path)) ;; FIXME: the meaning of this line
            (with s (url->tmfs-string name)
-                 (revert-buffer (string-append "tmfs://history/" s))))
+                 (revert-buffer (string-append "tmfs://git_history/" s))))
 
-(tmfs-title-handler (history name doc)
+(tmfs-title-handler (git_history name doc)
                     (with u (tmfs-string->url name)
                           (string-append (url->system (url-tail u)) " - History")))
 
-(tmfs-load-handler (history name)
+(tmfs-load-handler (git_history name)
                    (with u (tmfs-string->url name)
                          (with h (buffer-log u)
-                               `(document
-                                  (TeXmacs "1.99.2")
-                                  (style (tuple "generic" "chinese"))
-                                  (body ,(cons 'document h))))))
-
+                               ($generic
+                                ($tmfs-title "History of "
+                                             ($link (url->unix u)
+                                                    ($verbatim (url->system (url-tail u)))))
+                                ($when (not h)
+                                       "This file is not under version control.")
+                                ($when h
+                                       ($description-long
+                                        ($for (x h)
+                                              ($with (date by msg commit) x
+                                                     ($describe-item
+                                                      ($inline "Commit " commit " by " by " on " date)
+                                                      msg)))))))))
 
 (tmfs-format-handler (commit name)
                      (if (string-contains name "|")

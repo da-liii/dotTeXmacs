@@ -40,31 +40,6 @@
                   (ret (eval-system cmd)))
              (string-split ret #\nl)))
 
-(tm-define (string->commit-file str name)
-           (if (== str "") ""
-               (let* ((list1 (string-split str #\|))
-                  (list2 (list (string-take (list-ref list1 0) 20)
-                               (string-append (list-ref list1 1) "    ")
-                               (list 'hlink (string-take (list-ref list1 3) 7)
-                                     (string-append "tmfs://commit/"
-                                                    (list-ref list1 3)
-                                                    (if (== (string-length name) 0)
-                                                        ""
-                                                        (string-append "|" name))))
-                               (list 'new-line)
-                               (string-append (list-ref list1 2)))))
-             (cons 'concat list2))))
-
-(tm-define (string->commit-diff str)
-           (string->commit-file str ""))
-
-(tm-define (git-log)
-           (let* ((cmd "git log --pretty=%ai\"|\"%an\"|\"%s\"|\"%H")
-                  (ret1 (eval-system cmd))
-                  (ret2 (string-split ret1 #\nl))
-                  (ret3 (map string->commit-diff ret2)))
-             ret3))
-
 (tm-define (git-commit message)
            (let* ((cmd (string-append "git commit -m \"" message "\""))
                   (ret (eval-system cmd)))
@@ -72,8 +47,39 @@
              (set-message "git commit" message))
            (git-show-status))
 
+(tm-define (git-show path)
+           (let* ((cmd (string-append "git show " path))
+                  (ret (eval-system cmd)))
+             (display* "\n" cmd "\n" ret "\n")
+             ret))
+
+(tm-define (string->commit str name)
+           (if (== str "") '()
+               (let* ((list1 (string-split str #\|))
+                      (list2 (list (string-take (list-ref list1 0) 20)
+                                   (list-ref list1 1)
+                                   (list-ref list1 2)
+                                   ($link (string-append "tmfs://commit/"
+                                                         (list-ref list1 3)
+                                                         (if (== (string-length name) 0)
+                                                             ""
+                                                             (string-append "|" name)))
+                                          (string-take (list-ref list1 3) 7)))))
+                 list2)))
+
+
+(tm-define (git-log)
+           (let* ((cmd "git log --pretty=%ai\"|\"%an\"|\"%s\"|\"%H")
+                  (ret1 (eval-system cmd))
+                  (ret2 (string-split ret1 #\nl)))
+             (define (string->commit-diff str)
+                        (string->commit str ""))
+             (and (> (length ret2) 0)
+                  (== (cAr ret2) "")
+                  (map string->commit-diff (cDr ret2)))))
+
+
 (tm-define (buffer-log name)
-           (define ret '())
            (let* ((name1 (url->string name))
                   (sub (string-append (string-drop-right (eval-system "pwd") 1)
                                       "/"))
@@ -81,14 +87,8 @@
                   (cmd (string-append "git log --pretty=%ai\"|\"%an\"|\"%s\"|\"%H " name-s))
                   (ret1 (eval-system cmd))
                   (ret2 (string-split ret1 #\nl)))
-             (display* "\n" "The file: " name-s "\n")
-             (display* "\n" "PWD: " (eval-system "pwd") "\n")
-             (foreach (item ret2)
-                      (set! ret (cons (string->commit-file item name-s) ret)))
-             (reverse ret)))
-
-(tm-define (git-show path)
-           (let* ((cmd (string-append "git show " path))
-                  (ret (eval-system cmd)))
-             (display* "\n" cmd "\n" ret "\n")
-             ret))
+             (define (string->commit-file str)
+               (string->commit str name-s))
+             (and (> (length ret2) 0)
+                  (== (cAr ret2) "")
+                  (map string->commit-file (cDr ret2)))))
