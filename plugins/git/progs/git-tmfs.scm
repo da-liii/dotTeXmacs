@@ -70,5 +70,19 @@
                          (url-format (tmfs-string->url name))))
 
 (tmfs-load-handler (commit name)
-                   (git-show (string-replace name "|" ":./")))
+                   (if (string-contains name "|")
+                       (git-show (string-replace name "|" ":./"))
+                       (with m (git-commit-message name)
+                             (with p (git-commit-parent name)
+                                   (with d (git-commit-diff p name)
+                                         ($generic
+                                          ($tmfs-title "Commit Message of " (string-take name 7))
+                                          (if (== name p)
+                                              "parent 0"
+                                              `(concat "parent " ,($link (string-append "tmfs://commit/" p) p)))
+                                          (list 'new-line)
+                                          ($for (x m) `(concat ,x ,(list 'new-line)))
+                                          "----"
+                                          (list 'new-line)
+                                          ($for (x d) `(concat ,x ,(list 'new-line)))))))))
 

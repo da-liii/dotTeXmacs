@@ -40,6 +40,21 @@
                   (ret (eval-system cmd)))
              (string-split ret #\nl)))
 
+(tm-define (git-commit-message hash)
+           (let* ((cmd (string-append "git log -1 " hash))
+                  (ret (eval-system cmd)))
+             (string-split ret #\nl)))
+
+(tm-define (git-commit-parent hash)
+           (let* ((cmd (string-append "git log -2 --pretty=%H " hash " | tail -1"))
+                  (ret (eval-system cmd)))
+             (string-drop-right ret 1)))
+
+(tm-define (git-commit-diff parent hash)
+           (let* ((cmd (string-append "git diff --numstat " parent " " hash))
+                  (ret (eval-system cmd)))
+             (string-split ret #\nl)))
+
 (tm-define (git-commit message)
            (let* ((cmd (string-append "git commit -m \"" message "\""))
                   (ret (eval-system cmd)))

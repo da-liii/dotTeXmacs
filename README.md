@@ -7,7 +7,7 @@ $ cd
 # Step 1: backup your .TeXmacs
 $ mv .TeXmacs TeXmacs.bak
 # Step 2: clone my repo to your home
-$ git clone git://github.com/dotTeXmacs
+$ git clone git://github.com/sadhen/dotTeXmacs
 # Step 3: try it
 $ mv dotTeXmacs .TeXmacs
 ```
@@ -26,7 +26,7 @@ If you use an older version, you may have to add the following code to the my-in
 + rose: a rose from the document of TeXmacs
 
 ## Git plugin
-After installing this plugin, there will be a menu entry `Git` in the menu. The usage is quite straightforwad, so all you need to do is just using the menu to git your documents.
+After installing this plugin, there will be a menu entry `Git` in the menu. The usage is quite straightforward, so all you need to do is just using the menu to git your documents.
 
 Currently, I am working on it.
 
