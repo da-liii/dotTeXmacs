@@ -33,7 +33,7 @@
                                                ($for (x h)
                                                      ($with (date by msg commit) x
                                                             ($describe-item
-                                                             ($inline "Commit " commit " by " by " on " date)
+                                                             ($inline "Commit " commit " by " (utf8->cork by) " on " date)
                                                              (utf8->cork msg)))))))))
                          (else '())))
 
