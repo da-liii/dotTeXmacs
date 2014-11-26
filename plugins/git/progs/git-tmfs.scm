@@ -69,10 +69,6 @@
                           (string-append (url->system (url-tail u)) " - History")))
 
 (tmfs-load-handler (git_history name)
-                   (define pwd (string-append (string-drop-right (eval-system "pwd") 1) "/"))
-                   (if (string-contains name pwd)
-                       name
-                       (set! name (string-append pwd name)))
                    (with u (tmfs-string->url name)
                          (with h (buffer-log u)
                                ($generic
@@ -97,7 +93,7 @@
 
 (tmfs-load-handler (commit name)
                    (if (string-contains name "|")
-                       (git-show (string-replace name "|" ":./"))
+                       (git-show (string-replace name "|" ":"))
                        (with m (git-commit-message name)
                              (with p (git-commit-parent name)
                                    (with d (git-commit-diff p name)

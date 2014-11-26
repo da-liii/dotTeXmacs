@@ -2,15 +2,14 @@
 
 ## Try It
 The following steps will help you try my configurations:
-‘‘‘
-$ cd
-# Step 1: backup your .TeXmacs
-$ mv .TeXmacs TeXmacs.bak
-# Step 2: clone my repo to your home
-$ git clone git://github.com/sadhen/dotTeXmacs
-# Step 3: try it
-$ mv dotTeXmacs .TeXmacs
-‘‘‘
+#### Step 0: cd to your home dir
+`$ cd`
+#### Step 1: backup your .TeXmacs
+`$ mv .TeXmacs TeXmacs.bak`
+#### Step 2: clone my repo to your home
+`$ git clone git://github.com/sadhen/dotTeXmacs`
+#### Step 3: try it
+`$ mv dotTeXmacs .TeXmacs`
 
 ## Graph plugin
 + struct-graph: a function for translating a TeXmacs "tree" representing the relations of structs in Linux Kernel to a easy-to-read graph.
