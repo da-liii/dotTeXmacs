@@ -2,10 +2,9 @@
 
 (tm-define (buffer-status name)
            (let* ((name-s (url->string name))
-                  (cmd (string-append "git status -s " name-s))
+                  (cmd (string-append "git status --porcelain " name-s))
                   (ret (eval-system cmd)))
-             ;; (display ret)
-             ;; FIXME: why it works for colored text without any handling
+             ;; should use string-take
              (cond ((string-starts? ret "A ") "A ")
                    ((string-starts? ret "??") "??")
                    ((string-starts? ret " M") " M")
@@ -19,7 +18,7 @@
                  (or (== ret "A ")
                      (== ret "M ")
                      (== ret "MM")
-                     (== ret "AM"))))
+                     (== ret "AM")))) 
 
 (tm-define (buffer-unstaged? name)
            (with ret (buffer-status name)
@@ -36,9 +35,20 @@
                      (== ret "others"))))
 
 (tm-define (git-status)
-           (let* ((cmd "git status")
-                  (ret (eval-system cmd)))
-             (string-split ret #\nl)))
+           (let* ((cmd "git status --porcelain")
+                  (ret1 (eval-system cmd))
+                  (ret2 (string-split ret1 #\nl)))
+             (define (convert name)
+               (let* ((status (string-take name 2))
+                      (filename (string-drop name 3))
+                      (file (if (or (string-starts? status "A")
+                                    (string-starts? status "?"))
+                                filename
+                                ($link (string-append "tmfs://git_history/" filename) filename))))
+                 (list status file)))
+             (and (> (length ret2) 0)
+                  (== (cAr ret2) "")
+                  (map convert (cDr ret2)))))
 
 (tm-define (git-commit-message hash)
            (let* ((cmd (string-append "git log -1 " hash))
@@ -96,14 +106,14 @@
 
 (tm-define (buffer-log name)
            (let* ((name1 (url->string name))
-                  (sub (string-append (string-drop-right (eval-system "pwd") 1)
-                                      "/"))
+                  (sub (string-append (string-drop-right (eval-system "pwd") 1) "/"))
                   (name-s (string-replace name1 sub ""))
                   (cmd (string-append "git log --pretty=%ai\"|\"%an\"|\"%s\"|\"%H " name-s))
                   (ret1 (eval-system cmd))
                   (ret2 (string-split ret1 #\nl)))
              (define (string->commit-file str)
                (string->commit str name-s))
+             (display* ret2 "\n")
              (and (> (length ret2) 0)
                   (== (cAr ret2) "")
                   (map string->commit-file (cDr ret2)))))

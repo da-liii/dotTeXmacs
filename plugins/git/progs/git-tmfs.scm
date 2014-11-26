@@ -18,23 +18,45 @@
 (tmfs-load-handler (git name)
                    (cond ((== name "status")
                           (with s (git-status)
-                                `(document
-                                  (TeXmacs "1.99.2")
-                                  (style (tuple "generic" "chinese"))
-                                  (body ,(cons 'document s)))))
+                                ($generic
+                                 ($when (not s)
+                                        "Not git status available!")
+                                 ($when s
+                                        ($tmfs-title "Git Status")
+                                        ($description-long
+                                         ($describe-item "Changes to be commited:"
+                                                         ($for (x s)
+                                                               ($with (status file) x
+                                                                      (cond ((string-starts? status "A")
+                                                                             (list 'concat "new file:   " file (list 'new-line)))
+                                                                            ((string-starts? status "M")
+                                                                             (list 'concat "modified:   " file (list 'new-line)))
+                                                                            (else "")))))
+                                         ($describe-item "Changes not staged for commit:"
+                                                         ($for (x s)
+                                                               ($with (status file) x
+                                                                      (cond ((string-ends? status "M")
+                                                                             (list 'concat "modified:   " file (list 'new-line)))
+                                                                            (else "")))))
+                                         ($describe-item "Untracked files:"
+                                                         ($for (x s)
+                                                               ($with (status file) x
+                                                                      (cond ((== status "??")
+                                                                             (list 'concat file (list 'new-line)))
+                                                                            (else ""))))))))))
                          ((== name "log")
                           (with h (git-log)
-                                      ($generic
-                                       ($tmfs-title "Git Log")
-                                       ($when (not h)
-                                              "This directory is not under version control.")
-                                       ($when h
-                                              ($description-long
-                                               ($for (x h)
-                                                     ($with (date by msg commit) x
-                                                            ($describe-item
-                                                             ($inline "Commit " commit " by " (utf8->cork by) " on " date)
-                                                             (utf8->cork msg)))))))))
+                                ($generic
+                                 ($tmfs-title "Git Log")
+                                 ($when (not h)
+                                        "This directory is not under version control.")
+                                 ($when h
+                                        ($description-long
+                                         ($for (x h)
+                                               ($with (date by msg commit) x
+                                                      ($describe-item
+                                                       ($inline "Commit " commit " by " (utf8->cork by) " on " date)
+                                                       (utf8->cork msg)))))))))
                          (else '())))
 
 (tm-define (git-history name)
@@ -47,6 +69,10 @@
                           (string-append (url->system (url-tail u)) " - History")))
 
 (tmfs-load-handler (git_history name)
+                   (define pwd (string-append (string-drop-right (eval-system "pwd") 1) "/"))
+                   (if (string-contains name pwd)
+                       name
+                       (set! name (string-append pwd name)))
                    (with u (tmfs-string->url name)
                          (with h (buffer-log u)
                                ($generic
