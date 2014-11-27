@@ -91,12 +91,51 @@
                                (url-format u))
                          (url-format (tmfs-string->url name))))
 
+(define (string-repeat str n)
+  (do ((i 1 (1+ i))
+       (ret "" (string-append ret str)))
+      ((> i n) ret)))
+
+(define (get-row-from-x x maxs maxv)
+  (define (get-length nr)
+    (let* ((ret (/ (* nr (min maxs maxv)) maxv)))
+      (if (and (> ret 0) (< ret 1)) 1
+          ret)))
+  `(row (cell ,(third x))
+        (cell ,(number->string (+ (first x) (second x))))
+        (cell (concat (with color green
+                            ,(string-repeat "+"
+                                            (get-length (first x))))
+                      (with color red
+                            ,(string-repeat "-"
+                                            (get-length (second x))))))))
+
 (tmfs-load-handler (commit name)
+                   (define nr 0)
+                   (define ins 0)
+                   (define del 0)
+                   (define maxv 0) ;; the string
+                   (define maxs 0) ;; the space
+                   
                    (if (string-contains name "|")
                        (git-show (string-replace name "|" ":"))
                        (with m (git-commit-message name)
                              (with p (git-commit-parent name)
                                    (with d (git-commit-diff p name)
+                                         (set! ins (list-fold + 0 (map first d)))
+                                         (set! del (list-fold + 0 (map second d)))
+                                         (set! nr (length d))
+                                         (set! maxv (list-fold max 0
+                                                               (map (lambda (x)
+                                                                      (+ (first x) (second x)))
+                                                                    d)))
+                                         (set! maxs
+                                               (- 81 (list-fold max 0
+                                                                (map (lambda (x)
+                                                                       (+ (string-length
+                                                                           (number->string (+ (first x) (second x))))
+                                                                          (string-length (cork->utf8 (second (third x))))))
+                                                                     d))))
                                          ($generic
                                           ($tmfs-title "Commit Message of " (string-take name 7))
                                           (if (== name p)
@@ -104,7 +143,19 @@
                                               `(concat "parent " ,($link (string-append "tmfs://commit/" p) p)))
                                           (list 'new-line)
                                           ($for (x m) `(concat ,(utf8->cork x) ,(list 'new-line)))
-                                          "----"
+                                          "-----"
                                           (list 'new-line)
-                                          ($for (x d) `(concat ,(utf8->cork x) ,(list 'new-line)))))))))
+                                          `(verbatim
+                                            (tabular
+                                             (tformat
+                                              (cwith "1" "-1" "1" "-1"
+                                                     cell-lsep "0pt")
+                                              ,(cons 'table
+                                                     (map (lambda (x) (get-row-from-x x maxs maxv)) d)))))
+                                          (list 'new-line)
+                                          `(concat ,nr " files changed, "
+                                                   ,ins " insertions(" (verbatim (with color green "+")) "), "
+                                                   ,del " deletions(" (verbatim (with color red "-")) ")")))))))
+
+
 
