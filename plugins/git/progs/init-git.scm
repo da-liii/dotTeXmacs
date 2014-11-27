@@ -13,7 +13,14 @@
                                 (assuming (buffer-to-unadd? (current-buffer))
                                           ("Undo Add" (git-unadd (current-buffer))))
                                 (when (buffer-histed? (current-buffer))
-                                      ("History" (git-history (current-buffer))))))))
+                                      ("History" (git-history (current-buffer))))
+                                (=> "Compare"
+                                    (assuming (buffer-tmfs? (current-buffer))
+                                              ("With current file" (git-compare-with-current (current-buffer))))
+                                    (assuming (buffer-tmfs? (current-buffer))
+                                              ("With parent commit" (git-compare-with-parent (current-buffer))))
+                                    (assuming (not (buffer-tmfs? (current-buffer)))
+                                              ("With last commit" (git-compare-with-master (current-buffer)))))))))
 
 (tm-define (git-interactive-commit)
            (:interactive #t)

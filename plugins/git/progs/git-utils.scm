@@ -34,6 +34,10 @@
                      (== ret " M")
                      (== ret "  "))))
 
+(tm-define (buffer-tmfs? name)
+           (string-starts? (url->string name)
+                           "tmfs"))
+
 (tm-define (git-add name)
            (let* ((name-s (url->string name))
                   (cmd (string-append callgit " add " name-s))
@@ -73,6 +77,11 @@
 
 (tm-define (git-commit-parent hash)
            (let* ((cmd (string-append callgit " log -2 --pretty=%H " hash " | tail -1"))
+                  (ret (eval-system cmd)))
+             (string-drop-right ret 1)))
+
+(tm-define (git-commit-master)
+           (let* ((cmd (string-append callgit " log -1 --pretty=%H"))
                   (ret (eval-system cmd)))
              (string-drop-right ret 1)))
 
@@ -153,8 +162,37 @@
                            (eval-system cmd))))
              (when (string-starts? ret "/")
                    (set! gitroot (string-drop-right ret 1))
-                   (set! callgit (string-append "git --work-tree=" gitroot " --git-dir=" gitroot "/.git")))
+                   (set! callgit (string-append "git --work-tree=" gitroot
+                                                " --git-dir=" gitroot "/.git")))
              (display* "[debug] --git-dir= " gitroot "\n")
              (if (string-starts? gitroot "/")
                  #t
                  #f)))
+
+(tm-define (git-compare-with-current name)
+           (let* ((name-s (url->string name))
+                  (file-r (cAr (string-split name-s #\|)))
+                  (file (string-append gitroot "/" file-r)))
+             (switch-to-buffer (string->url file))
+             (compare-with-older name)))
+
+(tm-define (git-compare-with-parent name)
+           (let* ((name-s (string-replace (url->string name)
+                                          "tmfs://commit/" ""))
+                  (hash (first (string-split name-s #\|)))
+                  (file (second (string-split name-s #\|)))
+                  (file-buffer-s (string-append "tmfs://commit/"
+                                              (git-commit-parent hash) "|"
+                                              file))
+                  (parent (string->url file-buffer-s)))
+             (compare-with-older parent)))
+
+(tm-define (git-compare-with-master name)
+           (let* ((name-s (string-replace (url->string name)
+                                          (string-append gitroot "/")
+                                          "|"))
+                  (file-buffer-s (string-append "tmfs://commit/"
+                                                (git-commit-master)
+                                                name-s))
+                  (master (string->url file-buffer-s)))
+             (compare-with-older master)))
