@@ -80,6 +80,15 @@
                   (ret (eval-system cmd)))
              (string-drop-right ret 1)))
 
+(tm-define (git-commit-file-parent file hash)
+           (let* ((cmd (string-append callgit " log --pretty=%H " gitroot "/" file))
+                  (ret (eval-system cmd))
+                  (ret2 (string-decompose ret (string-append hash "\n"))))
+             ;; (display ret2)
+             (if (== (length ret2) 1)
+                 hash
+                 (string-take (second ret2) 40))))
+
 (tm-define (git-commit-master)
            (let* ((cmd (string-append callgit " log -1 --pretty=%H"))
                   (ret (eval-system cmd)))
@@ -181,19 +190,18 @@
              (switch-to-buffer (string->url file))
              (compare-with-older name)))
 
-;; FIXME
-;; should compare with previous version
-;; exception: if non previous version exists
 (tm-define (git-compare-with-parent name)
            (let* ((name-s (string-replace (url->string name)
                                           "tmfs://commit/" ""))
                   (hash (first (string-split name-s #\|)))
                   (file (second (string-split name-s #\|)))
                   (file-buffer-s (string-append "tmfs://commit/"
-                                              (git-commit-parent hash) "|"
+                                              (git-commit-file-parent file hash) "|"
                                               file))
                   (parent (string->url file-buffer-s)))
-             (compare-with-older parent)))
+             (if (== name parent)
+                 (set-message "No parent" "No parent")
+                 (compare-with-older parent))))
 
 (tm-define (git-compare-with-master name)
            (let* ((name-s (string-replace (url->string name)

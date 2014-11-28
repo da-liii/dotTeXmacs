@@ -16,9 +16,9 @@
                                       ("History" (git-history (current-buffer))))
                                 (=> "Compare"
                                     (assuming (buffer-tmfs? (current-buffer))
-                                              ("With current file" (git-compare-with-current (current-buffer))))
+                                              ("With current version" (git-compare-with-current (current-buffer))))
                                     (assuming (buffer-tmfs? (current-buffer))
-                                              ("With parent commit" (git-compare-with-parent (current-buffer))))
+                                              ("With parent version" (git-compare-with-parent (current-buffer))))
                                     (assuming (not (buffer-tmfs? (current-buffer)))
                                               ("With last commit" (git-compare-with-master (current-buffer)))))))))
 
