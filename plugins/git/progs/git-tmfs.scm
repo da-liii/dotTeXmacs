@@ -2,6 +2,20 @@
 
 (import-from (git-utils))
 
+(tm-define (string->commit str name)
+           (if (== str "") '()
+               (let* ((list1 (string-split str #\|))
+                      (list2 (list (string-take (list-ref list1 0) 20)
+                                   (list-ref list1 1)
+                                   (list-ref list1 2)
+                                   ($link (string-append "tmfs://commit/"
+                                                         (list-ref list1 3)
+                                                         (if (== (string-length name) 0)
+                                                             ""
+                                                             (string-append "|" name)))
+                                          (string-take (list-ref list1 3) 7)))))
+                 list2)))
+
 (tm-define (git-show-status)
            (cursor-history-add (cursor-path)) ;; FIXME: the meaning of this line
            (revert-buffer "tmfs://git/status"))
