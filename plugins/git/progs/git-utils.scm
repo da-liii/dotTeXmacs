@@ -87,17 +87,22 @@
 
 (tm-define (git-commit-diff parent hash)
            (let* ((cmd (if (== parent hash)
-                           (string-append callgit " show " hash " --numstat --pretty=oneline | tail -n +2")
+                           (string-append callgit " show " hash
+                                          " --numstat --pretty=oneline | tail -n +2")
                            (string-append callgit " diff --numstat " parent " " hash)))
                   (ret (eval-system cmd))
                   (ret2 (string-split ret #\nl)))
              (define (convert body)
                (let* ((alist (string-split body #\ht)))
-                 (list (string->number (list-ref alist 0))
-                       (string->number (list-ref alist 1))
+                 (if (== (first alist) "-")
+                     (list 0 0 (utf8->cork (third alist))
+                           (string-length (third alist)))
+                     (list (string->number (first alist))
+                       (string->number (second alist))
                        ($link (string-append "tmfs://commit/"
-                                             hash "|" (list-ref alist 2))
-                              (utf8->cork (list-ref alist 2))))))
+                                             hash "|" (third alist))
+                              (utf8->cork (third alist)))
+                       (string-length (third alist))))))
              (and (> (length ret2) 0)
                   (== (cAr ret2) "")
                   (map convert (cDr ret2)))))
@@ -176,6 +181,9 @@
              (switch-to-buffer (string->url file))
              (compare-with-older name)))
 
+;; FIXME
+;; should compare with previous version
+;; exception: if non previous version exists
 (tm-define (git-compare-with-parent name)
            (let* ((name-s (string-replace (url->string name)
                                           "tmfs://commit/" ""))

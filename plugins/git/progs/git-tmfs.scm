@@ -15,6 +15,7 @@
                           ((== name "log") "Git Log")
                           (else "unknown")))
 
+;; FIXME: should also show git diff --numstat
 (tmfs-load-handler (git name)
                    (cond ((== name "status")
                           (with s (git-status)
@@ -24,7 +25,7 @@
                                  ($when s
                                         ($tmfs-title "Git Status")
                                         ($description-long
-                                         ($describe-item "Changes to be commited:"
+                                         ($describe-item "Changes to be commited"
                                                          ($for (x s)
                                                                ($with (status file) x
                                                                       (cond ((string-starts? status "A")
@@ -32,13 +33,13 @@
                                                                             ((string-starts? status "M")
                                                                              (list 'concat "modified:   " file (list 'new-line)))
                                                                             (else "")))))
-                                         ($describe-item "Changes not staged for commit:"
+                                         ($describe-item "Changes not staged for commit"
                                                          ($for (x s)
                                                                ($with (status file) x
                                                                       (cond ((string-ends? status "M")
                                                                              (list 'concat "modified:   " file (list 'new-line)))
                                                                             (else "")))))
-                                         ($describe-item "Untracked files:"
+                                         ($describe-item "Untracked files"
                                                          ($for (x s)
                                                                ($with (status file) x
                                                                       (cond ((== status "??")
@@ -134,7 +135,7 @@
                                                                 (map (lambda (x)
                                                                        (+ (string-length
                                                                            (number->string (+ (first x) (second x))))
-                                                                          (string-length (cork->utf8 (second (third x))))))
+                                                                          (fourth x)))
                                                                      d))))
                                          ($generic
                                           ($tmfs-title "Commit Message of " (string-take name 7))
@@ -156,6 +157,3 @@
                                           `(concat ,nr " files changed, "
                                                    ,ins " insertions(" (verbatim (with color green "+")) "), "
                                                    ,del " deletions(" (verbatim (with color red "-")) ")")))))))
-
-
-
