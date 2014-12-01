@@ -46,6 +46,8 @@
                                                                              (list 'concat "new file:   " file (list 'new-line)))
                                                                             ((string-starts? status "M")
                                                                              (list 'concat "modified:   " file (list 'new-line)))
+                                                                            ((string-starts? status "R")
+                                                                             (list 'concat "renamed:    " file (list 'new-line)))
                                                                             (else "")))))
                                          ($describe-item "Changes not staged for commit"
                                                          ($for (x s)

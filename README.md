@@ -12,17 +12,19 @@ The following steps will help you try my configurations:
 `$ mv dotTeXmacs .TeXmacs`
 
 ## Graph plugin
-+ struct-graph: a function for translating a TeXmacs "tree" representing the relations of structs in Linux Kernel to a easy-to-read graph.
++ rose: a rose from Henri Lesourd's [tutorial](http://texmacs.org/tmweb/documents/tutorials/TeXmacs-graphics-tutorial.pdf) of TeXmacs graphics. The code in the tutorial is outdated because of the change of the TeXmacs's Scheme serialization.
+
++ struct-graph: a function for translating a TeXmacs "tree" representing the relations of structs in Linux Kernel to a easy-to-read graph. Some explanation and two figures can be found in my blog [post](http://sadhen.com/2014/11/09/texmacs-graphics-struct/) in Chinese.
 
 **Notice**:
 
 If you use an older version, you may have to add the following code to the my-init-texmacs.scm file:
+
 ‘‘‘ scheme
 (define (tree->number atree)
         (string->number (tree->string atree)))
 ‘‘‘
 
-+ rose: a rose from the document of TeXmacs
 
 ## Git plugin
 After installing this plugin, there will be a menu entry ‘Git‘ in the menu. The usage is quite straightforward, so all you need to do is just using the menu to git your documents.
@@ -30,7 +32,3 @@ After installing this plugin, there will be a menu entry ‘Git‘ in the menu. 
 **NOTICE**: If you do not use the newest code from SVN repository, you may fail to see the Git menu. Also, I have not tested it for Windows or MacOS.
 
 Currently, I am working on it.
-
-## Todo
-
-1. Change keymap ‘M-[‘ and ‘M-]‘ to ‘A-[‘ and ‘A-]‘
