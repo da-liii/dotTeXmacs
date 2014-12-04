@@ -4,7 +4,8 @@
 
 (tm-define (string->commit str name)
            (if (== str "") '()
-               (let* ((list1 (string-split str #\|))
+               (let* ((list1 (string-split str #\nl))
+                      (list3 (display* "\n" (fourth list1) "\n"))
                       (list2 (list (string-take (list-ref list1 0) 20)
                                    (list-ref list1 1)
                                    (list-ref list1 2)
@@ -14,6 +15,7 @@
                                                              ""
                                                              (string-append "|" name)))
                                           (string-take (list-ref list1 3) 7)))))
+                 
                  list2)))
 
 (tm-define (git-show-status)

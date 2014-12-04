@@ -5,6 +5,8 @@
 (define callgit
   "git")
 
+(define NR_LOG_OPTION " -1000 ")
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; git add, unadd, history, compare
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -27,10 +29,11 @@
                   (sub (string-append gitroot "/"))
                   (name-s (string-replace name1 sub ""))
                   (cmd (string-append
-                        callgit " log --pretty=%ai\"|\"%an\"|\"%s\"|\"%H "
+                        callgit " log --pretty=%ai%n%an%n%s%n%H%n"
+                        NR_LOG_OPTION
                         name1))
                   (ret1 (eval-system cmd))
-                  (ret2 (string-split ret1 #\nl)))
+                  (ret2 (string-decompose ret1 "\n\n")))
              (define (string->commit-file str)
                (string->commit str name-s))
              (and (> (length ret2) 0)
@@ -92,9 +95,10 @@
 (tm-define (git-log)
            (let* ((cmd (string-append
                         callgit
-                        " log --pretty=%ai\"|\"%an\"|\"%s\"|\"%H"))
+                        " log --pretty=%ai%n%an%n%s%n%H%n"
+                        NR_LOG_OPTION))
                   (ret1 (eval-system cmd))
-                  (ret2 (string-split ret1 #\nl)))
+                  (ret2 (string-decompose ret1 "\n\n")))
              (define (string->commit-diff str)
                         (string->commit str ""))
              (and (> (length ret2) 0)

@@ -20,7 +20,7 @@ The following steps will help you try my configurations:
 
 If you use an older version, you may have to add the following code to the my-init-texmacs.scm file:
 
-‘‘‘ scheme
+‘‘‘
 (define (tree->number atree)
         (string->number (tree->string atree)))
 ‘‘‘
