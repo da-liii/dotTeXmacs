@@ -4,17 +4,16 @@
 
 (tm-define (string->commit str name)
            (if (== str "") '()
-               (let* ((list1 (string-split str #\nl))
-                      (list3 (display* "\n" (fourth list1) "\n"))
-                      (list2 (list (string-take (list-ref list1 0) 20)
-                                   (list-ref list1 1)
-                                   (list-ref list1 2)
+               (let* ((list1 (string-split str #\nl))                      
+                      (list2 (list (string-take (first list1) 20)
+                                   (second list1)
+                                   (third list1)
                                    ($link (string-append "tmfs://commit/"
-                                                         (list-ref list1 3)
+                                                         (fourth list1)
                                                          (if (== (string-length name) 0)
                                                              ""
                                                              (string-append "|" name)))
-                                          (string-take (list-ref list1 3) 7)))))
+                                          (string-take (fourth list1) 7)))))
                  
                  list2)))
 

@@ -1,11 +1,18 @@
 (texmacs-module (git-utils))
 
-(define gitroot "invalid")
+(tm-define gitroot "C:/Users/sadhen/AppData/Roaming/TeXmacs")
 
-(define callgit
-  "git")
+(tm-define callgit
+  (string-append
+     "git --work-tree=" gitroot
+     " --git-dir=" gitroot "/.git"))
 
 (define NR_LOG_OPTION " -1000 ")
+
+(define (delete-tail-newline a-str)
+  (if (string-ends? a-str "\n")
+      (delete-tail-newline (string-drop-right a-str 1))
+      a-str))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; git add, unadd, history, compare
@@ -25,7 +32,7 @@
              (display cmd)))
 
 (tm-define (buffer-log name)
-           (let* ((name1 (url->string name))
+           (let* ((name1 (string-replace (url->string name) "\\" "/"))
                   (sub (string-append gitroot "/"))
                   (name-s (string-replace name1 sub ""))
                   (cmd (string-append
@@ -84,8 +91,10 @@
                       (file (if (or (string-starts? status "A")
                                     (string-starts? status "?"))
                                 filename
-                                ($link (string-append "tmfs://git_history/file"
-                                                      gitroot "/" filename)
+                                ($link (string-append "tmfs://git_history/"
+                                                      (url->tmfs-string 
+                                                       (string-append 
+                                                        gitroot "/" filename)))
                                        (utf8->cork filename)))))
                  (list status file)))
              (and (> (length ret2) 0)
@@ -116,6 +125,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; basic routines for buffer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; FIXME:the condiction should be refined
+(tm-define (dir? path)
+           (or (string-starts? path "/")
+               (string-starts? (string-drop path 1) ":")))
+
 (tm-define (git-versioned? name)
            (let* ((dir (url->system (url-head name)))
                   (cmd (string-append "cd " dir
@@ -123,20 +138,18 @@
                   (ret (if (string-starts? dir "tmfs")
                            "tmfs"
                            (eval-system cmd))))
-             (when (string-starts? ret "/")
-                   (set! gitroot (string-drop-right ret 1))
-                   (set! callgit (string-append "git --work-tree=" gitroot
-                                                " --git-dir=" gitroot "/.git")))
-             (display* "[debug] --git-dir= " gitroot "\n")
-             (if (string-starts? gitroot "/")
-                 #t
-                 #f)))
+             ;; (when (dir? ret)
+             ;;       (set! gitroot (string-drop-right ret 1))
+             ;;       (set! callgit (string-append "git --work-tree=" gitroot
+             ;;                                    " --git-dir=" gitroot "/.git")))
+             (display* "[debug] --git-dir=" gitroot "\n")
+             (dir? gitroot)))
 
 (tm-define (buffer-status name)
            (let* ((name-s (url->string name))
                   (cmd (string-append callgit " status --porcelain " name-s))
                   (ret (eval-system cmd)))
-             (cond ((>= (string-length ret) 2) (string-take ret 2))
+             (cond ((> (string-length ret) 3) (string-take ret 2))
                    ((file-exists? name-s) "  ")
                    (else ""))))
 
@@ -181,10 +194,12 @@
 
 (tm-define (git-commit-parent hash)
            (let* ((cmd (string-append
-                        callgit " log -2 --pretty=%H " hash
-                        " | tail -1"))
-                  (ret (eval-system cmd)))
-             (string-drop-right ret 1)))
+                        callgit " log -2 --pretty=%H " hash))
+                  (ret1 (eval-system cmd))
+		  (ret2 (delete-tail-newline ret1))
+		  (ret3 (string-split ret2 #\nl))
+		  (ret4 (cAr ret3)))
+             ret4))
 
 (tm-define (git-commit-file-parent file hash)
            (let* ((cmd (string-append
@@ -201,7 +216,7 @@
 (tm-define (git-commit-master)
            (let* ((cmd (string-append callgit " log -1 --pretty=%H"))
                   (ret (eval-system cmd)))
-             (string-drop-right ret 1)))
+             (delete-tail-newline ret)))
 
 (tm-define (git-commit-diff parent hash)
            (let* ((cmd (if (== parent hash)
