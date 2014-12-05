@@ -1,11 +1,8 @@
 (texmacs-module (git-utils))
 
-(tm-define gitroot "C:/Users/sadhen/AppData/Roaming/TeXmacs")
+(define gitroot "invalid")
 
-(tm-define callgit
-  (string-append
-     "git --work-tree=" gitroot
-     " --git-dir=" gitroot "/.git"))
+(define callgit "git")
 
 (define NR_LOG_OPTION " -1000 ")
 
@@ -126,24 +123,24 @@
 ;;; basic routines for buffer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; FIXME:the condiction should be refined
-(tm-define (dir? path)
-           (or (string-starts? path "/")
-               (string-starts? (string-drop path 1) ":")))
+(tm-define (git-root dir)
+           (let* ((git-dir (url-append dir ".git"))
+                  (pdir (url-expand (url-append dir ".."))))
+             (cond ((url-directory? git-dir)
+                    (string-replace (url->string dir) "\\" "/"))
+                   ((== pdir dir) "invalid")
+                   (else (git-root pdir)))))
 
 (tm-define (git-versioned? name)
-           (let* ((dir (url->system (url-head name)))
-                  (cmd (string-append "cd " dir
-                                      " && git rev-parse --show-toplevel"))
-                  (ret (if (string-starts? dir "tmfs")
-                           "tmfs"
-                           (eval-system cmd))))
-             ;; (when (dir? ret)
-             ;;       (set! gitroot (string-drop-right ret 1))
-             ;;       (set! callgit (string-append "git --work-tree=" gitroot
-             ;;                                    " --git-dir=" gitroot "/.git")))
-             (display* "[debug] --git-dir=" gitroot "\n")
-             (dir? gitroot)))
+           (when (not (buffer-tmfs? name))
+                 (set! gitroot
+                       (git-root (if (url-directory? name)
+                                     name
+                                     (url-head name))))
+                 (set! callgit
+                       (string-append "git --work-tree=" gitroot
+                                      " --git-dir=" gitroot "/.git")))
+           (url-directory? gitroot))
 
 (tm-define (buffer-status name)
            (let* ((name-s (url->string name))
