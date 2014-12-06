@@ -62,6 +62,7 @@
                                   file))
                   (parent (string->url file-buffer-s)))
              (if (== name parent)
+                 ;; FIXME: should prompt a dialog
                  (set-message "No parent" "No parent")
                  (compare-with-older parent))))
 
@@ -171,6 +172,12 @@
                      (== ret " M")
                      (== ret "  "))))
 
+(tm-define (buffer-has-diff? name)
+           (with ret (buffer-status name)
+                 (or (== ret "M ")
+                     (== ret "MM")
+                     (== ret " M"))))
+
 (tm-define (buffer-tmfs? name)
            (string-starts? (url->string name)
                            "tmfs"))
@@ -219,12 +226,14 @@
            (let* ((cmd (if (== parent hash)
                            (string-append
                             callgit " show " hash
-                            " --numstat --pretty=oneline | tail -n +2")
+                            " --numstat --pretty=oneline")
                            (string-append
                             callgit " diff --numstat "
                             parent " " hash)))
                   (ret (eval-system cmd))
-                  (ret2 (string-split ret #\nl)))
+                  (ret2 (if (== parent hash)
+                            (cdr (string-split ret #\nl))
+                            (string-split ret #\nl))))
              (define (convert body)
                (let* ((alist (string-split body #\ht)))
                  (if (== (first alist) "-")
