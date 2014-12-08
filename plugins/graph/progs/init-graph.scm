@@ -16,30 +16,17 @@
         ,(car i))
      ,(cons 'begin b)))
 
-(define (list-max number_list)
-  (cond ((null? number_list) '())
-        (else 
-          (cond ((eq? (length number_list) 1) (car number_list))
-                (else 
-                  (max (car number_list) 
-                       (list-max (cdr number_list))))))))
+(define (list-max nrlist)
+  (if (null? nrlist) '() (eval (cons 'max nrlist))))
 
-(define (list-sum number_list)
-  (cond ((null? number_list) '())
-        (else
-          (cond ((eq? (length number_list) 1) (car number_list))
-                (else
-                  (+ (car number_list)
-                     (list-sum (cdr number_list))))))))
+(define (list-sum nrlist)
+  (if (null? nrlist) '() (eval (cons '+ nrlist))))
 
-(define (snoc elem alist)
-  (reverse (cons elem (reverse alist))))
-
-(define (rac alist)
-  (car (reverse alist)))
 ; functions for table
-(define CELL_HCENTER '(cwith "1" "-1" "1" "1" "cell-halign" "c"))
-(define TABLE_HEAD_COLOR '(cwith "1" "1" "1" "1" "cell-background" "yellow"))
+(define CELL_HCENTER
+  '(cwith "1" "-1" "1" "1" "cell-halign" "c"))
+(define TABLE_HEAD_COLOR
+  '(cwith "1" "1" "1" "1" "cell-background" "yellow"))
 
 (define (get-block body)
   (cons 'block (cons body '())))
@@ -58,8 +45,7 @@
   (foreach (i body)
            (set! result (cons (get-row (get-cell i)) result)))
   (set! result (reverse result))
-  (cons 'table result)
-  )
+  (cons 'table result))
 
 (define (do-get-block body)
   (get-block (do-get-tformat (do-get-table body))))
@@ -146,13 +132,13 @@
 (define HPADDING 0.1)
 (define VPADDING 0.1)
 
-(define (get-self-and-group-geometry name_body)
+(define (get-self-and-group-geometry name-body)
   (define flag #t)
   (define result '())
   (define table-content '())
-  (define body (caddr name_body))
-  (define name (cadr name_body))
-  (define the_block '())
+  (define body (caddr name-body))
+  (define name (cadr name-body))
+  (define the-block '())
   ; calculate flag
   (foreach (elem (cddr body))
            (if (list? elem) (set! flag #f) (null? '())))
@@ -161,41 +147,43 @@
   (foreach (elem (cddr body))
            (set! table-content (cons (extract-string elem) table-content)))
   (set! table-content (reverse table-content))
-  (set! the_block (do-get-block table-content))
+  (set! the-block (do-get-block table-content))
   ; calculate result
   (foreach (elem (cddr body))
-           (if (list? elem) (set! result (cons (get-self-and-group-geometry elem)
-                                               result))
+           (if (list? elem)
+               (set! result (cons (get-self-and-group-geometry elem)
+                                  result))
                (null? '())))
   (set! result (reverse result))
   ; calculate the self geometry and group geometry
   (if flag (set! result (cons 
                          (list table-content 
-                               (get-geometry the_block) 
-                               (get-geometry the_block))
+                               (get-geometry the-block) 
+                               (get-geometry the-block))
                          result))
-      (set! result (cons (list table-content
-                               (get-geometry the_block)
-                               (list (number->string 
-                                      (+ (string->number (get-width the_block))
-                                        HGAP
-                                        (list-max (map extract-width result)))) 
-                                     (number->string 
-                                      (max (string->number 
-                                            (get-height the_block))
-                                        (+ (list-sum (map extract-height result)) 
-                                           (* VGAP (- (length result) 1))))))) 
-                         result)))
+      (set! result
+            (cons (list table-content
+                        (get-geometry the-block)
+                        (list (number->string 
+                               (+ (string->number (get-width the-block))
+                                  HGAP
+                                  (list-max (map extract-width result)))) 
+                              (number->string 
+                               (max (string->number 
+                                     (get-height the-block))
+                                    (+ (list-sum (map extract-height result)) 
+                                       (* VGAP (- (length result) 1))))))) 
+                  result)))
   (list name result))
 
 ; get the position of the struct body
 (define (get-position body left bottom top)
   (define result '())
-  (define new_left (+ left (extract-self-width body) HGAP))
-  (define new_vgap 0)
-  (define sub_body '())
+  (define new-left (+ left (extract-self-width body) HGAP))
+  (define new-vgap 0)
+  (define sub-body '())
   (define height-list '())
-  (define tmp_v '())
+  (define tmp-v '())
   ;; input:  (h1 h2 h3) base gap
   ;; output: (base X+h1) (base+h1+gap X+h2) (base+h1+gap+h2+gap X+h3)
   (define (get-tmp-v alist base gap)
@@ -203,44 +191,45 @@
     (set! alist (reverse alist))
     (set! result (cons (list base (+ base (car alist))) result))
     (foreach-number (i 1 < (length alist))
-             (set! result (snoc `(,(+ gap (rac (rac result))) 
-                                  ,(+ gap (list-ref alist i) 
-                                      (rac (rac result))))
-                                result)))
+                    (set! result (rcons result
+                                        `(,(+ gap (last (last result))) 
+                                          ,(+ gap (list-ref alist i) 
+                                              (last (last result)))))))
     (reverse result))
   
-  (set! sub_body (cdr (cadr body)))
-  (set! height-list (map extract-height sub_body)) ;; edited
+  (set! sub-body (cdr (cadr body)))
+  (set! height-list (map extract-height sub-body)) ;; edited
   
   ;; calculate the new vertical gap
   (if (< (length height-list) 2) (null? '())
-      (set! new_vgap (/ (- top (+ (list-sum height-list) bottom)) (- (length sub_body) 1))))
+      (set! new-vgap
+            (/ (- top (+ (list-sum height-list) bottom))
+               (- (length sub-body) 1))))
 
-  (if (= (length height-list) 1) (set! tmp_v (list (list bottom top)))
+  (if (= (length height-list) 1) (set! tmp-v (list (list bottom top)))
       (null? '()))
   (if (< (length height-list) 2) (null? '())
-      (set! tmp_v (get-tmp-v height-list bottom new_vgap)))
+      (set! tmp-v (get-tmp-v height-list bottom new-vgap)))
   
   (if (null? height-list) (null? '())
       (foreach-number (i 0 < (length height-list))
                       (set! result 
-                            (cons (get-position (list-ref sub_body i) 
-                                           new_left 
-                                           (car (list-ref tmp_v i)) 
-                                           (cadr (list-ref tmp_v i))) 
+                            (cons (get-position (list-ref sub-body i) 
+                                           new-left 
+                                           (car (list-ref tmp-v i)) 
+                                           (cadr (list-ref tmp-v i))) 
                              result))))
   (set! result (reverse result))
-  (set! result (cons (snoc 
-                      (list left (/ (+ bottom top) 2.0)) 
-                      (car (cadr body))) 
+  (set! result (cons (rcons (car (cadr body))
+                      (list left (/ (+ bottom top) 2.0))) 
                      result))
-  (list (car body) result)
-  )
+  (list (car body) result))
 
 (define (do-get-struct-tables body)
   (define result '())
   (define table-content '())
   (define point (list-ref (car (cadr body)) 3))
+
   (set! table-content (car (car (cadr body))))  
   (foreach (elem (cdr (cadr body)))
            (set! result (append (do-get-struct-tables elem) result)))
@@ -252,8 +241,8 @@
 ; sx = x, sy = y + (height/2)*(1 - 1/(length content))
 (define (do-get-struct-position body)
   (define content (car body))
-  (define x (car (rac body)))
-  (define y (cadr (rac body)))
+  (define x (car (last body)))
+  (define y (cadr (last body)))
   (define height (string->number (cadr (cadr body))))
   (do-get-point (tmlen->graph x) 
                 (tmlen->graph (+ y (* (/ height 2.0)
@@ -268,8 +257,8 @@
 
 (define (do-get-member-position elem body)
   (define content (car body))
-  (define x (car (rac body)))
-  (define y (cadr (rac body)))
+  (define x (car (last body)))
+  (define y (cadr (last body)))
   (define height (string->number (cadr (cadr body))))
   (define width (string->number (car (cadr body))))
   (do-get-point (tmlen->graph (+ x width))
@@ -279,14 +268,14 @@
 
 (define (do-get-lines body)
   (define result '())
-  (define sub_body (cdr body))
-  (define name_body (car body))
-  (foreach (elem sub_body)
+  (define sub-body (cdr body))
+  (define name-body (car body))
+  (foreach (elem sub-body)
            (set! result (append result
                                 (do-get-lines (cadr elem)))))
-  (foreach (elem sub_body)
+  (foreach (elem sub-body)
            (set! result (cons (do-get-line (do-get-member-position
-                                         (car elem) name_body) 
+                                         (car elem) name-body) 
                                         (do-get-struct-position 
                                          (car (cadr elem)))) 
                               result)))
@@ -295,14 +284,15 @@
 (tm-define (do-struct-graph body)
   (:secure #t)
   (define result '())
-  (define canvas_width 0)
-  (define canvas_height 0)
+  (define canvas-width 0)
+  (define canvas-height 0)
   (set! body (list 'tree "root" body))
   (set! body (get-self-and-group-geometry body))
-  (set! canvas_width (+ (extract-width body) (cm->tmlen (* 2 HPADDING))))
-  (set! canvas_height (extract-height body))
-  (set! body (get-position body 0 0 canvas_height))
-  (set! canvas_height (+ canvas_height (cm->tmlen (* 2 VPADDING))))
+  (set! canvas-width (+ (extract-width body) (cm->tmlen (* 2 HPADDING))))
+  (set! canvas-height (extract-height body))
+  (set! body (get-position body 0 0 canvas-height))
+  (set! canvas-height (+ canvas-height (cm->tmlen (* 2 VPADDING))))
+  (display* body "\n")
   (set! result (do-get-struct-tables body))
   (set! result (append result (do-get-lines (cadr body))))
   (set! result (list 'with "gr-mode" "point"
@@ -312,8 +302,8 @@
                                    (cm->string VPADDING)))
                      "gr-geometry"
                      (list 'tuple "geometry" 
-                           (cm->string (tmlen->cm canvas_width)) 
-                           (cm->string (tmlen->cm canvas_height)) "center")
+                           (cm->string (tmlen->cm canvas-width)) 
+                           (cm->string (tmlen->cm canvas-height)) "center")
                      (do-get-graphics result)))
   result)
 
@@ -337,12 +327,9 @@
   (with t (focus-tree)
             (set! code (list 'do-struct-graph
                              (get-list (cadr (tree->stree t)))))
-            (tree-set! t (eval code)))
-  )
+            (tree-set! t (eval code))))
 
-(kbd-map
-    ("M-e" (edit-struct-graph))
-  )
+(kbd-map ("M-e" (edit-struct-graph)))
 
 ; draw a rose
 (tm-define (rose r nsteps)
@@ -361,4 +348,7 @@
   (foreach (p1 points)
            (foreach (p2 points)
                     (set! lines (cons `(line ,p1 ,p2) lines))))
-  `(with  "gr-geometry"  ,(cons 'tuple '("geometry" "0.5par" "0.5par" "center")) ,(do-get-graphics (append lines points))))
+  `(with  "gr-geometry"
+     ,(cons 'tuple
+            '("geometry" "0.5par" "0.5par" "center"))
+     ,(do-get-graphics (append lines points))))

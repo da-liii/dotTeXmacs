@@ -41,7 +41,7 @@
     (define (string->commit-file str)
       (string->commit str name-s))
     (and (> (length ret2) 0)
-         (== (cAr ret2) "")
+         (string-null? (cAr ret2))
          (map string->commit-file (cDr ret2)))))
 
 (tm-define (git-compare-with-current name)
@@ -52,14 +52,11 @@
     (compare-with-older name)))
 
 (tm-define (git-compare-with-parent name)
-  (let* ((name-s (string-replace (url->string name)
-                                 "tmfs://commit/" ""))
+  (let* ((name-s (tmfs-cdr (tmfs-cdr (url->tmfs-string name))))
          (hash (first (string-split name-s #\|)))
          (file (second (string-split name-s #\|)))
-         (file-buffer-s (string-append
-                         "tmfs://commit/"
-                         (git-commit-file-parent file hash) "|"
-                         file))
+         (file-buffer-s (tmfs-url-commit (git-commit-file-parent file hash)
+                                         "|" file))
          (parent (string->url file-buffer-s)))
     (if (== name parent)
         ;; FIXME: should prompt a dialog
@@ -70,9 +67,8 @@
   (let* ((name-s (string-replace (url->string name)
                                  (string-append gitroot "/")
                                  "|"))
-         (file-buffer-s (string-append "tmfs://commit/"
-                                       (git-commit-master)
-                                       name-s))
+         (file-buffer-s (tmfs-url-commit (git-commit-master)
+                                         name-s))
          (master (string->url file-buffer-s)))
     (compare-with-older master)))
 
@@ -89,14 +85,13 @@
              (file (if (or (string-starts? status "A")
                            (string-starts? status "?"))
                        filename
-                       ($link (string-append "tmfs://git_history/"
-                                             (url->tmfs-string 
-                                              (string-append 
-                                               gitroot "/" filename)))
+                       ($link (tmfs-url-git_history (url->tmfs-string 
+                                                     (string-append 
+                                                      gitroot "/" filename)))
                               (utf8->cork filename)))))
         (list status file)))
     (and (> (length ret2) 0)
-         (== (cAr ret2) "")
+         (string-null? (cAr ret2))
          (map convert (cDr ret2)))))
 
 (tm-define (git-log)
@@ -109,7 +104,7 @@
     (define (string->commit-diff str)
       (string->commit str ""))
     (and (> (length ret2) 0)
-         (== (cAr ret2) "")
+         (string-null? (cAr ret2))
          (map string->commit-diff (cDr ret2)))))
 
 (tm-define (git-commit message)
@@ -241,10 +236,9 @@
                   (string-length (third alist)))
             (list (string->number (first alist))
                   (string->number (second alist))
-                  ($link (string-append "tmfs://commit/"
-                                        hash "|" (third alist))
+                  ($link (tmfs-url-commit hash "|" (third alist))
                          (utf8->cork (third alist)))
                   (string-length (third alist))))))
     (and (> (length ret2) 0)
-         (== (cAr ret2) "")
+         (string-null? (cAr ret2))
          (map convert (cDr ret2)))))

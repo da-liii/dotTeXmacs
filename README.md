@@ -19,6 +19,8 @@ I have made the plugin work for [mysysgit](http://msysgit.github.io/) under Wind
 
 To try it, you have to add the `PATH_TO_MSYSGIT\bin` to the system's `PATH` environment variable. To test if you have done it, type `git --version` and hit return in cmd.
 
+**Warning**: Please have a look at this [bug](https://savannah.gnu.org/bugs/?43765) first.
+
 ### Notice
 If you do not use the newest code from SVN repository, you may fail to see the Git menu. Also, I have not tested it for MacOS.
 
