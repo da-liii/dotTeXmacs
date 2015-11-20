@@ -33,7 +33,7 @@ If you do not use the newest code from SVN repository, you may fail to see the G
 
 If you use an older version, you may have to add the following code to the my-init-texmacs.scm file:
 
-```
+``` scheme
 (define (tree->number atree)
         (string->number (tree->string atree)))
 ```
