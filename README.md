@@ -11,7 +11,7 @@ The following steps will help you try my configurations:
 #### Step 3: try it
 `$ mv dotTeXmacs .TeXmacs`
 
-## Git plugin
+## Git plugin(has been moved to https://github.com/sadhen/tigmacs )
 After installing this plugin, there will be a menu entry `Git` in the menu. The usage is quite straightforward, so all you need to do is just using the menu to git your documents.
 
 ### Windows User Only
