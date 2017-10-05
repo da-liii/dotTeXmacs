@@ -1,4 +1,6 @@
-# My TeXmacs's Configurations
+# TeXmacs's Configurations
+
+I will rewrite it using Literate Programming.
 
 ## Try It
 The following steps will help you try my configurations:
